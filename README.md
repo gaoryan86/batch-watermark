@@ -14,9 +14,6 @@
 English | [简体中文](./README.zh-CN.md)
 
 </div>
-
----
-
 ## Why Batch Watermark?
 
 | Problem | What Batch Watermark does |
