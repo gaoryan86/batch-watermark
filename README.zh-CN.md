@@ -29,8 +29,6 @@
 
 ![批量水印工具（英文界面）](./assets/screenshot-en.png)
 
-![产品预览图（1200x630）](./assets/product-1200x630.png)
-
 
 ## 核心功能
 

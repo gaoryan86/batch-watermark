@@ -29,8 +29,6 @@ English | [简体中文](./README.zh-CN.md)
 
 ![Batch Watermark (EN UI)](./assets/screenshot-en.png)
 
-![Product preview (1200x630)](./assets/product-1200x630.png)
-
 
 ## Key Features
 

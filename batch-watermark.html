@@ -560,8 +560,8 @@
         <div class="header-title"><span data-i18n="appTitle">批量水印工具</span> <span style="color:var(--text-secondary);font-weight:400;font-size:11px;">(v2.0)</span></div>
         <div class="header-actions">
             <div class="lang-switch">
-                <button class="lang-toggle-btn" id="lang-zh" onclick="setLanguage('zh')" data-i18n="languageZh">中文</button>
                 <button class="lang-toggle-btn" id="lang-en" onclick="setLanguage('en')" data-i18n="languageEn">EN</button>
+                <button class="lang-toggle-btn" id="lang-zh" onclick="setLanguage('zh')" data-i18n="languageZh">中文</button>
             </div>
             <button class="btn btn-danger-ghost header-action-btn" onclick="clearAll()" title="清空工作区" data-i18n-title="clearWorkspaceTitle">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -736,8 +736,6 @@
         const HANDLE_STORE_NAME = 'kv';
         const EXPORT_HANDLE_KEY = 'exportDirectoryHandle';
         const NATURAL_SORTER = new Intl.Collator('zh-Hans-CN', { numeric: true, sensitivity: 'base' });
-        const LANGUAGE_STORAGE_KEY = 'batch-watermark-language';
-
         const I18N = {
             zh: {
                 pageTitle: 'Batch Watermark',
@@ -841,11 +839,7 @@
             }
         };
 
-        let currentLanguage = (() => {
-            const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-            if (saved === 'zh' || saved === 'en') return saved;
-            return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
-        })();
+        let currentLanguage = 'en';
 
         function t(key, params = {}) {
             const template = I18N[currentLanguage][key] || I18N.zh[key] || key;
@@ -880,7 +874,6 @@
         function setLanguage(language) {
             if (!I18N[language]) return;
             currentLanguage = language;
-            localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
             applyTranslations();
         }
 
