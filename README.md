@@ -25,6 +25,13 @@ English | [简体中文](./README.zh-CN.md)
 
 > **TL;DR** - This tool is built for a local, fast, low-friction watermark workflow. Open a folder, adjust text once per image, save settings when needed, and export renamed results without leaving the browser.
 
+## Screenshots
+
+![Batch Watermark (EN UI)](./assets/screenshot-en.png)
+
+![Product preview (1200x630)](./assets/product-1200x630.png)
+
+
 ## Key Features
 
 ### Review Workflow
