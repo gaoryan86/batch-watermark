@@ -400,14 +400,58 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.8);
             white-space: nowrap;
             transform: translate(-50%, -50%);
+            transform-origin: center center;
             transition: outline 0.2s, opacity 0.2s;
         }
         .watermark:hover {
             outline: 1px dashed rgba(255,255,255,0.8);
         }
+        .watermark.selected {
+            outline: 2px solid var(--accent-color);
+        }
         .watermark.dragging {
             opacity: 0.8;
             outline: 2px solid var(--accent-color);
+        }
+        .watermark-label {
+            display: inline-block;
+        }
+        .wm-handle {
+            position: absolute;
+            display: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(15, 16, 19, 0.95);
+            border: 2px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            pointer-events: auto;
+        }
+        .watermark.selected .wm-handle {
+            display: block;
+        }
+        .wm-handle-rotate {
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: grab;
+            border-color: #ffd166;
+        }
+        .wm-handle-rotate::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 14px;
+            width: 1px;
+            height: 12px;
+            background: rgba(255,255,255,0.7);
+            transform: translateX(-50%);
+        }
+        .wm-handle-resize {
+            right: -14px;
+            bottom: -14px;
+            cursor: nwse-resize;
+            border-color: var(--accent-color);
         }
 
         /* Empty State */
@@ -604,11 +648,19 @@
                         <span class="slider-value" id="size-value">24px</span>
                     </div>
                 </div>
+                <div class="control-group">
+                    <label data-i18n="rotationLabel">旋转</label>
+                    <div class="slider-container">
+                        <input type="range" id="rotation" min="-180" max="180" value="0">
+                        <span class="slider-value" id="rotation-value">0deg</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Canvas Operations -->
             <div class="panel-section">
                 <div class="panel-title" data-i18n="currentPanel">当前图片操作</div>
+                <p class="action-hint" style="margin-top:0;margin-bottom:8px;" data-i18n="transformHint">拖动文字移动；拖动右下角缩放点调整大小；拖动上方旋转点旋转。</p>
                 <div class="btn-row control-group">
                     <button class="btn btn-secondary" onclick="addWatermark()" id="btn-add">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -710,10 +762,11 @@
         // ==========================================
         let currentImage = null;
         let watermarks = [];
+        let activeWatermark = null;
         let currentFiles = [];
         let currentFileIndex = 0;
         
-        // Structure: { fileName: { watermarks: [{text, x%, y%, fontSize}], isProcessed: boolean } }
+        // Structure: { fileName: { watermarks: [{text, left%, top%, fontSize, rotation, scale, previewImageWidth}], isProcessed: boolean } }
         let imageSettings = {};
         
         const UI = {
@@ -725,6 +778,8 @@
             textInput: document.getElementById('watermark-text'),
             fontSizeInput: document.getElementById('font-size'),
             sizeValue: document.getElementById('size-value'),
+            rotationInput: document.getElementById('rotation'),
+            rotationValue: document.getElementById('rotation-value'),
             exportPath: document.getElementById('export-path')
         };
 
@@ -752,7 +807,9 @@
                 watermarkTextLabel: '文字',
                 watermarkTextPlaceholder: '输入要添加的文字',
                 fontSizeLabel: '字号',
+                rotationLabel: '旋转',
                 currentPanel: '当前图片操作',
+                transformHint: '拖动文字移动；拖动右下角缩放点调整大小；拖动上方旋转点旋转。',
                 addLayer: '新增水印层',
                 removeLayer: '删除一层',
                 completeCurrent: '立即保存当前设置',
@@ -802,7 +859,9 @@
                 watermarkTextLabel: 'Text',
                 watermarkTextPlaceholder: 'Enter watermark text',
                 fontSizeLabel: 'Size',
+                rotationLabel: 'Rotation',
                 currentPanel: 'Current Image Actions',
+                transformHint: 'Drag to move text. Drag the bottom-right handle to resize. Drag the top handle to rotate.',
                 addLayer: 'Add Layer',
                 removeLayer: 'Remove Layer',
                 completeCurrent: 'Save Current Settings Now',
@@ -1083,6 +1142,7 @@
                     // Clear old watermarks from DOM
                     document.querySelectorAll('.watermark').forEach(w => w.remove());
                     watermarks = [];
+                    activeWatermark = null;
                     
                     const settings = imageSettings[file.name];
                     if (settings && settings.watermarks.length > 0) {
@@ -1099,7 +1159,14 @@
         function restoreWatermarks(savedWatermarks) {
             const text = UI.textInput.value;
             savedWatermarks.forEach(wm => {
-                createWatermarkElement(wm.text || text, wm.fontSize || parseInt(UI.fontSizeInput.value, 10), wm.left, wm.top);
+                createWatermarkElement(
+                    wm.text || text,
+                    wm.fontSize || parseInt(UI.fontSizeInput.value, 10),
+                    wm.left,
+                    wm.top,
+                    wm.rotation || 0,
+                    wm.scale || 1
+                );
             });
             
             if (savedWatermarks.length > 0) {
@@ -1119,36 +1186,142 @@
             addWatermarkAtCenter();
         }
 
-        function createWatermarkElement(text, size, left, top) {
+        function getWatermarkText(element) {
+            return element.querySelector('.watermark-label')?.textContent || '';
+        }
+
+        function setWatermarkText(element, text) {
+            const label = element.querySelector('.watermark-label');
+            if (label) label.textContent = text;
+        }
+
+        function updateRotationValue(rotation) {
+            UI.rotationInput.value = Math.round(rotation);
+            UI.rotationValue.textContent = `${Math.round(rotation)}deg`;
+        }
+
+        function resetTransformControls() {
+            UI.fontSizeInput.value = DEFAULT_FONT_SIZE;
+            UI.sizeValue.textContent = `${DEFAULT_FONT_SIZE}px`;
+            updateRotationValue(0);
+        }
+
+        function applyWatermarkTransform(element) {
+            const rotation = parseFloat(element.dataset.rotation || '0');
+            const scale = parseFloat(element.dataset.scale || '1');
+            element.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(${scale})`;
+        }
+
+        function setWatermarkScale(element, nextScale) {
+            const clampedScale = Math.max(0.2, Math.min(4, nextScale));
+            element.dataset.scale = clampedScale.toFixed(2);
+            applyWatermarkTransform(element);
+        }
+
+        function setWatermarkRotation(element, nextRotation) {
+            const normalized = ((nextRotation % 360) + 360) % 360;
+            element.dataset.rotation = normalized.toFixed(1);
+            applyWatermarkTransform(element);
+            if (activeWatermark === element) {
+                updateRotationValue(normalized);
+            }
+        }
+
+        function normalizeWatermarkScale(element) {
+            const scale = parseFloat(element.dataset.scale || '1');
+            if (Math.abs(scale - 1) < 0.001) return;
+            const baseFontSize = parseInt(element.style.fontSize, 10) || DEFAULT_FONT_SIZE;
+            element.style.fontSize = `${Math.max(12, Math.round(baseFontSize * scale))}px`;
+            element.dataset.scale = '1';
+            applyWatermarkTransform(element);
+        }
+
+        function selectWatermark(element) {
+            if (activeWatermark) activeWatermark.classList.remove('selected');
+            activeWatermark = element;
+            if (!activeWatermark) {
+                resetTransformControls();
+                return;
+            }
+
+            normalizeWatermarkScale(activeWatermark);
+            activeWatermark.classList.add('selected');
+            UI.textInput.value = getWatermarkText(activeWatermark);
+            const activeSize = parseInt(activeWatermark.style.fontSize, 10) || DEFAULT_FONT_SIZE;
+            const activeRotation = parseFloat(activeWatermark.dataset.rotation || '0');
+            UI.fontSizeInput.value = activeSize;
+            UI.sizeValue.textContent = `${activeSize}px`;
+            updateRotationValue(activeRotation);
+        }
+
+        function createWatermarkElement(text, size, left, top, rotation = 0, scale = 1) {
             const watermark = document.createElement('div');
             watermark.className = 'watermark';
-            watermark.textContent = text;
+            watermark.innerHTML = `
+                <span class="watermark-label"></span>
+                <span class="wm-handle wm-handle-rotate" aria-hidden="true"></span>
+                <span class="wm-handle wm-handle-resize" aria-hidden="true"></span>
+            `;
+            setWatermarkText(watermark, text);
             watermark.style.fontSize = size + 'px';
             watermark.style.left = left;
             watermark.style.top = top;
+            watermark.dataset.rotation = String(rotation);
+            watermark.dataset.scale = String(scale);
+            applyWatermarkTransform(watermark);
             
             UI.canvasContainer.appendChild(watermark);
             watermarks.push(watermark);
             makeDraggable(watermark);
+            selectWatermark(watermark);
         }
         
         function removeWatermark() {
             if (watermarks.length > 0) {
                 const wm = watermarks.pop();
+                if (wm === activeWatermark) activeWatermark = null;
                 wm.remove();
+                if (watermarks.length > 0) {
+                    selectWatermark(watermarks[watermarks.length - 1]);
+                } else {
+                    resetTransformControls();
+                }
             }
         }
         
         function updateFontSize(size) {
             UI.sizeValue.textContent = size + 'px';
+            if (activeWatermark) {
+                normalizeWatermarkScale(activeWatermark);
+                activeWatermark.style.fontSize = size + 'px';
+                return;
+            }
             watermarks.forEach(wm => wm.style.fontSize = size + 'px');
         }
         
         function makeDraggable(element) {
             let isDragging = false;
+            let isResizing = false;
+            let isRotating = false;
             let startX, startY, startLeft, startTop;
+            let startDistance = 0;
+            let startFontSize = 0;
+            let startAngle = 0;
+            let startRotation = 0;
+            const rotateHandle = element.querySelector('.wm-handle-rotate');
+            const resizeHandle = element.querySelector('.wm-handle-resize');
+
+            function getCenter() {
+                const rect = UI.canvasContainer.getBoundingClientRect();
+                return {
+                    x: rect.left + (parseFloat(element.style.left) / 100 * rect.width),
+                    y: rect.top + (parseFloat(element.style.top) / 100 * rect.height)
+                };
+            }
             
             element.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.wm-handle')) return;
+                selectWatermark(element);
                 isDragging = true;
                 element.classList.add('dragging');
                 startX = e.clientX;
@@ -1180,6 +1353,50 @@
                 isDragging = false;
                 element.classList.remove('dragging');
             });
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                selectWatermark(element);
+                normalizeWatermarkScale(element);
+                const center = getCenter();
+                isResizing = true;
+                startDistance = Math.hypot(e.clientX - center.x, e.clientY - center.y) || 1;
+                startFontSize = parseInt(element.style.fontSize, 10) || DEFAULT_FONT_SIZE;
+            });
+
+            rotateHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                selectWatermark(element);
+                const center = getCenter();
+                isRotating = true;
+                startAngle = Math.atan2(e.clientY - center.y, e.clientX - center.x);
+                startRotation = parseFloat(element.dataset.rotation || '0');
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isResizing) {
+                    const center = getCenter();
+                    const nextDistance = Math.hypot(e.clientX - center.x, e.clientY - center.y) || 1;
+                    const nextFontSize = Math.max(12, Math.round(startFontSize * (nextDistance / startDistance)));
+                    element.style.fontSize = `${nextFontSize}px`;
+                    UI.fontSizeInput.value = nextFontSize;
+                    UI.sizeValue.textContent = `${nextFontSize}px`;
+                }
+
+                if (isRotating) {
+                    const center = getCenter();
+                    const nextAngle = Math.atan2(e.clientY - center.y, e.clientX - center.x);
+                    const deltaDegrees = (nextAngle - startAngle) * 180 / Math.PI;
+                    setWatermarkRotation(element, startRotation + deltaDegrees);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isResizing = false;
+                isRotating = false;
+            });
         }
 
         // ==========================================
@@ -1189,11 +1406,15 @@
             if (currentFiles.length === 0) return;
             
             const fileName = currentFiles[currentFileIndex].name;
+            const previewImageWidth = UI.mainImage.clientWidth || UI.mainImage.naturalWidth || 800;
             const savedWatermarks = watermarks.map(wm => ({
-                text: wm.textContent,
+                text: getWatermarkText(wm),
                 left: wm.style.left,
                 top: wm.style.top,
-                fontSize: parseInt(wm.style.fontSize, 10)
+                fontSize: parseInt(wm.style.fontSize, 10),
+                rotation: parseFloat(wm.dataset.rotation || '0'),
+                scale: parseFloat(wm.dataset.scale || '1'),
+                previewImageWidth
             }));
             
             imageSettings[fileName] = {
@@ -1219,11 +1440,15 @@
             if (currentFiles.length === 0) return showToast(t('toastOpenFilesFirst'), 'error');
             if (watermarks.length === 0) return showToast(t('toastNoLayers'), 'error');
 
+            const previewImageWidth = UI.mainImage.clientWidth || UI.mainImage.naturalWidth || 800;
             const currentLayout = watermarks.map(wm => ({
-                text: wm.textContent,
+                text: getWatermarkText(wm),
                 left: wm.style.left,
                 top: wm.style.top,
-                fontSize: parseInt(wm.style.fontSize, 10)
+                fontSize: parseInt(wm.style.fontSize, 10),
+                rotation: parseFloat(wm.dataset.rotation || '0'),
+                scale: parseFloat(wm.dataset.scale || '1'),
+                previewImageWidth
             }));
 
             let appliedCount = 0;
@@ -1300,14 +1525,23 @@
                         settings.watermarks.forEach(wm => {
                             const x = parseFloat(wm.left) / 100 * img.naturalWidth;
                             const y = parseFloat(wm.top) / 100 * img.naturalHeight;
-                            const fontSize = Math.round(wm.fontSize * (img.naturalWidth / 800)); // Responsive scale on export
+                            const previewWidth = wm.previewImageWidth || UI.mainImage.clientWidth || 800;
+                            const exportScaleFactor = img.naturalWidth / previewWidth;
+                            const fontSize = Math.round(wm.fontSize * exportScaleFactor);
+                            const scale = typeof wm.scale === 'number' ? wm.scale : 1;
+                            const rotation = typeof wm.rotation === 'number' ? wm.rotation : 0;
+                            const renderedSize = Math.max(1, Math.round(fontSize * scale));
 
                             // Canvas 2D does not resolve CSS var(...) in ctx.font, use computed family directly.
-                            ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+                            ctx.font = `${fontWeight} ${renderedSize}px ${fontFamily}`;
                             ctx.fillStyle = 'white';
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
-                            ctx.fillText(wm.text, x, y);
+                            ctx.save();
+                            ctx.translate(x, y);
+                            ctx.rotate((rotation * Math.PI) / 180);
+                            ctx.fillText(wm.text, 0, 0);
+                            ctx.restore();
                         });
 
                         const fileHandle = await window.exportDirectoryHandle.getFileHandle(exportFileName, { create: true });
@@ -1341,11 +1575,11 @@
             UI.emptyState.style.display = 'block';
             UI.statusOverlay.style.display = 'none';
             UI.exportPath.value = window.exportDirectoryHandle ? UI.exportPath.value : DEFAULT_EXPORT_PATH;
-            UI.fontSizeInput.value = DEFAULT_FONT_SIZE;
-            UI.sizeValue.textContent = `${DEFAULT_FONT_SIZE}px`;
+            resetTransformControls();
             
             document.querySelectorAll('.watermark').forEach(w => w.remove());
             watermarks = [];
+            activeWatermark = null;
             currentImage = null;
             currentFiles = [];
             imageSettings = {};
@@ -1395,6 +1629,22 @@
             if (event.key.toLowerCase() === 'n') {
                 event.preventDefault();
                 goToNextUnprocessed();
+            }
+        });
+
+        UI.textInput.addEventListener('input', () => {
+            if (!activeWatermark) return;
+            setWatermarkText(activeWatermark, UI.textInput.value);
+        });
+
+        UI.rotationInput.addEventListener('input', () => {
+            if (!activeWatermark) return;
+            setWatermarkRotation(activeWatermark, parseFloat(UI.rotationInput.value || '0'));
+        });
+
+        UI.canvasContainer.addEventListener('mousedown', (event) => {
+            if (event.target === UI.canvasContainer || event.target === UI.mainImage) {
+                selectWatermark(null);
             }
         });
 
