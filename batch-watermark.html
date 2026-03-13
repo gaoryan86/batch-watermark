@@ -163,6 +163,9 @@
             padding: 12px var(--spacing-md);
             border-bottom: 1px solid var(--border-color);
         }
+        .sidebar-scroll .panel-section:last-child {
+            border-bottom: none;
+        }
 
         .panel-title {
             font-size: 11px;
@@ -186,6 +189,35 @@
         .panel-title-row .panel-title,
         .label-row label {
             margin-bottom: 0;
+        }
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            align-items: start;
+        }
+        .export-grid .control-group {
+            margin-bottom: 0;
+            min-width: 0;
+        }
+        .export-grid .help-popover {
+            width: 190px;
+        }
+        .export-folder-row {
+            display: flex;
+            gap: 8px;
+        }
+        .export-folder-row input {
+            min-width: 0;
+        }
+        .export-grid input,
+        .export-grid select {
+            height: 44px;
+        }
+        .export-folder-row .btn {
+            width: 52px;
+            min-width: 52px;
+            padding: 0;
         }
         .btn-with-help {
             display: flex;
@@ -268,7 +300,7 @@
         }
 
         /* Form Elements */
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 8px 12px;
             background: var(--bg-base);
@@ -279,7 +311,7 @@
             font-family: inherit;
             transition: border-color 0.2s;
         }
-        input[type="text"]:focus, input[type="number"]:focus {
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
             outline: none;
             border-color: var(--accent-color);
         }
@@ -393,7 +425,6 @@
         /* Fixed Bottom Action Panel */
         .sidebar-bottom {
             background: var(--bg-base);
-            border-top: 1px solid var(--border-color);
             flex-shrink: 0;
         }
 
@@ -815,19 +846,35 @@
             <!-- Export Panel -->
             <div class="panel-section sidebar-bottom">
                 <div class="panel-title" data-i18n="exportPanel">批量导出</div>
-                <div class="control-group">
-                    <div class="label-row" style="margin-bottom: var(--spacing-sm);">
-                        <label data-i18n="exportFolderLabel">导出文件夹</label>
-                        <div class="help-inline">
-                            <button class="help-trigger" type="button" data-i18n-aria-label="helpButtonLabel">i</button>
-                            <div class="help-popover" data-i18n="exportAuthHint">首次导出需要点右侧按钮授权文件夹。</div>
+                <div class="export-grid">
+                    <div class="control-group">
+                        <div class="label-row" style="margin-bottom: var(--spacing-sm);">
+                            <label data-i18n="exportFolderLabel">文件夹</label>
+                            <div class="help-inline">
+                                <button class="help-trigger" type="button" data-i18n-aria-label="helpButtonLabel">i</button>
+                                <div class="help-popover" data-i18n="exportAuthHint">首次导出需要点右侧按钮授权文件夹。</div>
+                            </div>
+                        </div>
+                        <div class="export-folder-row">
+                            <input type="text" id="export-path" placeholder="请先选择" readonly style="flex:1;" value="/Users/Ryansmac/Downloads/watermark_ai_character/output_ai_character">
+                            <button class="btn btn-secondary" onclick="selectFolder()" style="width: auto;" title="选择导出文件夹" data-i18n-title="selectExportFolderTitle">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                            </button>
                         </div>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="export-path" placeholder="请先选择" readonly style="flex:1;" value="/Users/Ryansmac/Downloads/watermark_ai_character/output_ai_character">
-                        <button class="btn btn-secondary" onclick="selectFolder()" style="width: auto;" title="选择导出文件夹" data-i18n-title="selectExportFolderTitle">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                        </button>
+                    <div class="control-group">
+                        <div class="label-row" style="margin-bottom: var(--spacing-sm);">
+                            <label data-i18n="exportFormatLabel">格式</label>
+                            <div class="help-inline">
+                                <button class="help-trigger" type="button" data-i18n-aria-label="helpButtonLabel">i</button>
+                                <div class="help-popover" data-i18n="exportFormatHint">默认跟原图一致，也可以手动改成 JPG 或 PNG。</div>
+                            </div>
+                        </div>
+                        <select id="export-format">
+                            <option value="original" data-i18n="exportFormatOriginal">原格式</option>
+                            <option value="jpg" data-i18n="exportFormatJpg">JPG</option>
+                            <option value="png" data-i18n="exportFormatPng">PNG</option>
+                        </select>
                     </div>
                 </div>
                 <button class="btn btn-primary" onclick="batchExport()" style="height: 40px; font-size: 14px;">
@@ -908,7 +955,8 @@
             mosaicBrushSizeInput: document.getElementById('mosaic-brush-size'),
             mosaicBrushSizeValue: document.getElementById('mosaic-brush-size-value'),
             mosaicPreview: document.getElementById('mosaic-preview'),
-            exportPath: document.getElementById('export-path')
+            exportPath: document.getElementById('export-path'),
+            exportFormat: document.getElementById('export-format')
         };
 
         const DEFAULT_FONT_SIZE = 24;
@@ -953,7 +1001,12 @@
                 copyToAll: '把当前设置复制到全部图片',
                 copyToAllTitle: '把当前设置复制到全部图片',
                 exportPanel: '批量导出',
-                exportFolderLabel: '导出文件夹',
+                exportFolderLabel: '文件夹',
+                exportFormatLabel: '格式',
+                exportFormatHint: '默认跟原图一致，也可以手动改成 JPG 或 PNG。',
+                exportFormatOriginal: '原格式',
+                exportFormatJpg: 'JPG',
+                exportFormatPng: 'PNG',
                 selectExportFolderTitle: '选择导出文件夹',
                 exportAuthHint: '首次导出需要点右侧按钮授权文件夹。',
                 exportCompleted: '导出已保存图片',
@@ -1014,7 +1067,12 @@
                 copyToAll: 'Copy Current Settings to All Images',
                 copyToAllTitle: 'Copy current image settings to all images',
                 exportPanel: 'Export',
-                exportFolderLabel: 'Export Folder',
+                exportFolderLabel: 'Folder',
+                exportFormatLabel: 'Format',
+                exportFormatHint: 'Default is Original. You can switch to JPG or PNG.',
+                exportFormatOriginal: 'Original',
+                exportFormatJpg: 'JPG',
+                exportFormatPng: 'PNG',
                 selectExportFolderTitle: 'Choose export folder',
                 exportAuthHint: 'The first export still needs one folder permission grant.',
                 exportCompleted: 'Export Saved Images',
@@ -1876,9 +1934,10 @@
                     
                     const img = new Image();
                     const imageUrl = URL.createObjectURL(file);
-                    let exportFileName = buildExportFileName(fileName);
+                    const exportFormat = getExportFormatConfig(file);
+                    let exportFileName = buildExportFileName(fileName, exportFormat.extension);
                     try {
-                        exportFileName = await resolveExportFileName(fileName);
+                        exportFileName = await resolveExportFileName(exportFileName);
                         await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = imageUrl; });
 
                         const canvas = document.getElementById('export-canvas');
@@ -1925,7 +1984,7 @@
 
                         const fileHandle = await window.exportDirectoryHandle.getFileHandle(exportFileName, { create: true });
                         const writable = await fileHandle.createWritable();
-                        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.95));
+                        const blob = await new Promise(res => canvas.toBlob(res, exportFormat.mimeType, exportFormat.quality));
                         await writable.write(blob);
                         await writable.close();
                         exported++;
@@ -1972,17 +2031,40 @@
             updateStatus();
         }
 
-        function buildExportFileName(fileName) {
-            const dotIndex = fileName.lastIndexOf('.');
-            if (dotIndex <= 0) return `${fileName}_aicwm`;
-
-            const baseName = fileName.slice(0, dotIndex);
-            const extension = fileName.slice(dotIndex);
-            return `${baseName}_aicwm${extension}`;
+        function getOriginalExportFormat(file) {
+            const extension = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+            if (['jpg', 'jpeg'].includes(extension)) {
+                return { extension: 'jpg', mimeType: 'image/jpeg', quality: 0.95 };
+            }
+            if (extension === 'png') {
+                return { extension: 'png', mimeType: 'image/png' };
+            }
+            if (extension === 'webp') {
+                return { extension: 'webp', mimeType: 'image/webp', quality: 0.95 };
+            }
+            return { extension: 'jpg', mimeType: 'image/jpeg', quality: 0.95 };
         }
 
-        async function resolveExportFileName(fileName) {
-            const preferredName = buildExportFileName(fileName);
+        function getExportFormatConfig(file) {
+            const selectedFormat = UI.exportFormat.value;
+            if (selectedFormat === 'jpg') {
+                return { extension: 'jpg', mimeType: 'image/jpeg', quality: 0.95 };
+            }
+            if (selectedFormat === 'png') {
+                return { extension: 'png', mimeType: 'image/png' };
+            }
+            return getOriginalExportFormat(file);
+        }
+
+        function buildExportFileName(fileName, extension) {
+            const dotIndex = fileName.lastIndexOf('.');
+            if (dotIndex <= 0) return `${fileName}_aicwm.${extension}`;
+
+            const baseName = fileName.slice(0, dotIndex);
+            return `${baseName}_aicwm.${extension}`;
+        }
+
+        async function resolveExportFileName(preferredName) {
             const dotIndex = preferredName.lastIndexOf('.');
             const hasExtension = dotIndex > 0;
             const baseName = hasExtension ? preferredName.slice(0, dotIndex) : preferredName;
