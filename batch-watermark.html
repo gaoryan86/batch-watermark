@@ -172,6 +172,86 @@
             margin-bottom: 10px;
             font-weight: 600;
         }
+        .panel-title-row,
+        .label-row,
+        .inline-help-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .panel-title-row {
+            margin-bottom: 10px;
+        }
+        .panel-title-row .panel-title,
+        .label-row label {
+            margin-bottom: 0;
+        }
+        .btn-with-help {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-with-help .btn {
+            flex: 1;
+        }
+        .help-inline {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+        }
+        .help-trigger {
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.28);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            cursor: help;
+            transition: all 0.2s ease;
+        }
+        .help-trigger:hover,
+        .help-inline:hover .help-trigger,
+        .help-inline:focus-within .help-trigger {
+            color: white;
+            border-color: rgba(255,255,255,0.45);
+            background: rgba(255,255,255,0.08);
+        }
+        .help-popover {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            width: 220px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: rgba(18, 20, 24, 0.96);
+            color: var(--text-primary);
+            font-size: 12px;
+            line-height: 1.5;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.32);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-4px);
+            transition: opacity 0.16s ease, transform 0.16s ease;
+            z-index: 30;
+            text-transform: none;
+            letter-spacing: normal;
+            font-weight: 400;
+        }
+        .help-inline:hover .help-popover,
+        .help-inline:focus-within .help-popover {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
 
         .control-group {
             margin-bottom: 10px;
@@ -630,7 +710,13 @@
             <div class="sidebar-scroll">
             <!-- File Panel -->
             <div class="panel-section">
-                <div class="panel-title" data-i18n="importPanel">导入图片</div>
+                <div class="panel-title-row">
+                    <div class="panel-title" data-i18n="importPanel">导入图片</div>
+                    <div class="help-inline">
+                        <button class="help-trigger" type="button" data-i18n-aria-label="helpButtonLabel">i</button>
+                        <div class="help-popover" data-i18n="importHint">默认读取当前文件夹内的图片，并按文件名顺序排列。</div>
+                    </div>
+                </div>
                 <div class="btn-row control-group">
                     <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
@@ -641,7 +727,6 @@
                         <span data-i18n="openFolder">打开文件夹</span>
                     </button>
                 </div>
-                <p style="font-size:11px;color:var(--text-secondary);margin-top:8px;" data-i18n="importHint">默认读取当前文件夹内的图片，并按文件名顺序排列。</p>
             </div>
 
             <!-- Properties Panel -->
@@ -676,13 +761,17 @@
 
             <!-- Canvas Operations -->
             <div class="panel-section">
-                <div class="panel-title" data-i18n="currentPanel">当前图片操作</div>
-                <p class="action-hint" style="margin-top:0;margin-bottom:8px;" data-i18n="transformHint">拖动文字移动；拖动右下角缩放点调整大小；拖动上方旋转点旋转。</p>
-                <p class="action-hint" style="margin-top:0;margin-bottom:8px;" data-i18n="mosaicBrushHint">点“马赛克涂抹”进入涂抹模式，然后直接在图片上按住拖动。</p>
+                <div class="panel-title-row">
+                    <div class="panel-title" data-i18n="currentPanel">当前图片操作</div>
+                    <div class="help-inline">
+                        <button class="help-trigger" type="button" data-i18n-aria-label="helpButtonLabel">i</button>
+                        <div class="help-popover" data-i18n="currentPanelHelp">文字可直接拖动、缩放、旋转；马赛克请先点“马赛克涂抹”，再到图片上拖动。</div>
+                    </div>
+                </div>
                 <div class="btn-row control-group">
                     <button class="btn btn-secondary" onclick="addWatermark()" id="btn-add">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        <span data-i18n="addLayer">新增水印层</span>
+                        <span data-i18n="addLayer">新增文字层</span>
                     </button>
                     <button class="btn btn-secondary" onclick="toggleMosaicBrushMode()" id="btn-mosaic-brush">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8c1.657 0 3 1.343 3 3 0 1.12-.614 2.097-1.522 2.61L13 20l-9-9 6.39-6.478A2.998 2.998 0 0 1 13 3c1.657 0 3 1.343 3 3 0 .768-.289 1.468-.764 2 .476.532.764 1.232.764 2z"></path></svg>
@@ -707,21 +796,18 @@
                     </button>
                 </div>
 
-                <div class="action-block">
-                    <button class="btn btn-secondary" onclick="goToNextUnprocessed()" title="跳到下一张还没保存设置的图片" data-i18n-title="nextIncompleteTitle">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        <span data-i18n="nextIncomplete">跳到下一张待处理图片</span>
-                    </button>
-                    <p class="action-hint" data-i18n="nextIncompleteHint">自动跳到下一张还没处理的图片。快捷键：N</p>
-                </div>
-
                 <!-- NEW FEATURE: Apply to All -->
                 <div class="pro-feature">
-                    <button class="btn btn-secondary" onclick="applyToAll()" title="把当前设置复制到全部图片" data-i18n-title="copyToAllTitle">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                        <span data-i18n="copyToAll">把当前设置复制到全部图片</span>
-                    </button>
-                    <p class="action-hint" data-i18n="copyPanelHint">会把当前图的文字、水印位置、字号和马赛克区域复制到全部图片，并覆盖它们已有设置。</p>
+                    <div class="btn-with-help">
+                        <button class="btn btn-secondary" onclick="applyToAll()" title="把当前设置复制到全部图片" data-i18n-title="copyToAllTitle">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            <span data-i18n="copyToAll">把当前设置复制到全部图片</span>
+                        </button>
+                        <div class="help-inline">
+                            <button class="help-trigger" type="button" data-i18n-aria-label="helpButtonLabel">i</button>
+                            <div class="help-popover" data-i18n="copyPanelHint">会把当前图的文字、水印位置、字号和马赛克区域复制到全部图片。</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             </div>
@@ -730,14 +816,19 @@
             <div class="panel-section sidebar-bottom">
                 <div class="panel-title" data-i18n="exportPanel">批量导出</div>
                 <div class="control-group">
-                    <label data-i18n="exportFolderLabel">导出文件夹</label>
+                    <div class="label-row" style="margin-bottom: var(--spacing-sm);">
+                        <label data-i18n="exportFolderLabel">导出文件夹</label>
+                        <div class="help-inline">
+                            <button class="help-trigger" type="button" data-i18n-aria-label="helpButtonLabel">i</button>
+                            <div class="help-popover" data-i18n="exportAuthHint">首次导出需要点右侧按钮授权文件夹。</div>
+                        </div>
+                    </div>
                     <div style="display:flex; gap:8px;">
                         <input type="text" id="export-path" placeholder="请先选择" readonly style="flex:1;" value="/Users/Ryansmac/Downloads/watermark_ai_character/output_ai_character">
                         <button class="btn btn-secondary" onclick="selectFolder()" style="width: auto;" title="选择导出文件夹" data-i18n-title="selectExportFolderTitle">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                         </button>
                     </div>
-                    <p style="font-size:11px;color:var(--text-secondary);margin-top:8px;" data-i18n="exportAuthHint">首次导出需要点右侧按钮授权文件夹。</p>
                 </div>
                 <button class="btn btn-primary" onclick="batchExport()" style="height: 40px; font-size: 14px;">
                     <span data-i18n="exportCompleted">导出已保存图片</span>
@@ -837,6 +928,7 @@
                 appTitle: '批量水印工具',
                 languageZh: '中文',
                 languageEn: 'EN',
+                helpButtonLabel: '显示说明',
                 clearWorkspace: '清空当前批次',
                 clearWorkspaceTitle: '清空当前批次',
                 importPanel: '导入图片',
@@ -850,17 +942,14 @@
                 rotationLabel: '旋转',
                 mosaicBrushSizeLabel: '马赛克笔刷',
                 currentPanel: '当前图片操作',
-                transformHint: '拖动文字移动；拖动右下角缩放点调整大小；拖动上方旋转点旋转。',
+                currentPanelHelp: '文字可直接拖动、缩放、旋转；马赛克请先点“马赛克涂抹”，再到图片上拖动。',
                 mosaicBrushHint: '点“马赛克涂抹”进入涂抹模式，然后直接在图片上按住拖动。',
-                addLayer: '新增水印层',
+                addLayer: '新增文字层',
                 mosaicBrushToggle: '马赛克涂抹',
                 clearMosaic: '清除马赛克',
                 removeLayer: '删除选中对象',
                 completeCurrent: '立即保存当前设置',
-                nextIncomplete: '跳到下一张待处理图片',
-                nextIncompleteTitle: '跳到下一张还没保存设置的图片',
-                nextIncompleteHint: '自动跳到下一张还没处理的图片。快捷键：N',
-                copyPanelHint: '会把当前图的文字、水印位置、字号和马赛克区域复制到全部图片，并覆盖它们已有设置。',
+                copyPanelHint: '会把当前图的文字、水印位置、字号和马赛克区域复制到全部图片。',
                 copyToAll: '把当前设置复制到全部图片',
                 copyToAllTitle: '把当前设置复制到全部图片',
                 exportPanel: '批量导出',
@@ -900,6 +989,7 @@
                 appTitle: 'Batch Watermark',
                 languageZh: '中文',
                 languageEn: 'EN',
+                helpButtonLabel: 'Show help',
                 clearWorkspace: 'Clear Current Batch',
                 clearWorkspaceTitle: 'Clear current batch',
                 importPanel: 'Import Images',
@@ -913,17 +1003,14 @@
                 rotationLabel: 'Rotation',
                 mosaicBrushSizeLabel: 'Mosaic Brush',
                 currentPanel: 'Current Image Actions',
-                transformHint: 'Drag to move text. Drag the bottom-right handle to resize. Drag the top handle to rotate.',
+                currentPanelHelp: 'Text can be moved, resized, and rotated directly. For mosaic, click "Mosaic Brush" and paint on the image.',
                 mosaicBrushHint: 'Click "Mosaic Brush" to enter paint mode, then drag directly on the image.',
-                addLayer: 'Add Layer',
+                addLayer: 'Add Text Layer',
                 mosaicBrushToggle: 'Mosaic Brush',
                 clearMosaic: 'Clear Mosaic',
                 removeLayer: 'Delete Selected',
                 completeCurrent: 'Save Current Settings Now',
-                nextIncomplete: 'Go to Next Pending Image',
-                nextIncompleteTitle: 'Jump to the next image without saved settings',
-                nextIncompleteHint: 'Jumps to the next image without saved settings. Shortcut: N',
-                copyPanelHint: 'Copies the current image\'s text, watermark placement, size, and mosaic regions to all images and overwrites their existing settings.',
+                copyPanelHint: 'Copies text, size, placement, and mosaic to all images.',
                 copyToAll: 'Copy Current Settings to All Images',
                 copyToAllTitle: 'Copy current image settings to all images',
                 exportPanel: 'Export',
@@ -986,6 +1073,10 @@
 
             document.querySelectorAll('[data-i18n-title]').forEach((node) => {
                 node.title = t(node.dataset.i18nTitle);
+            });
+
+            document.querySelectorAll('[data-i18n-aria-label]').forEach((node) => {
+                node.setAttribute('aria-label', t(node.dataset.i18nAriaLabel));
             });
 
             updateLanguageToggle();
@@ -1963,12 +2054,6 @@
                 } else {
                     pasteCopiedWatermark();
                 }
-                return;
-            }
-
-            if (event.key.toLowerCase() === 'n') {
-                event.preventDefault();
-                goToNextUnprocessed();
                 return;
             }
 
